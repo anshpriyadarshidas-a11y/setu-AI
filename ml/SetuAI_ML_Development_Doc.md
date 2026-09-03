@@ -74,60 +74,60 @@ Every risk score — rule-based or ML — must be able to return a **contributin
 ## 6. Build Checklist (Sequential)
 
 ### Phase 0 — Environment Setup
-- [ ] Set up Python ML environment (Pandas, NumPy, Scikit-learn; add XGBoost if pursuing Stage B)
-- [ ] Confirm access to weather data source and its hourly forecast fields
-- [ ] Confirm access to (or plan for simulating) historical disruption data
-- [ ] Agree on the data schema handoff with the Backend team (must match `road_segments`, `weather_data`, `disruptions` tables)
+- [x] Set up Python ML environment (Pandas, NumPy, Scikit-learn; add XGBoost if pursuing Stage B)
+- [x] Confirm access to weather data source and its hourly forecast fields
+- [x] Confirm access to (or plan for simulating) historical disruption data
+- [x] Agree on the data schema handoff with the Backend team (must match `road_segments`, `weather_data`, `disruptions` tables)
 
 ### Phase 1 — Stage A: Rule-Based Model
-- [ ] Implement the weighted formula as a standalone, pure function (no framework dependencies) so it's trivially testable and swappable later
-- [ ] Implement contributing-factors output alongside the score (see §5)
-- [ ] Unit-test against a handful of hand-constructed scenarios (e.g., high rain + steep terrain should score higher than low rain + flat terrain) to sanity-check the weights
-- [ ] Confirm output format matches what the Backend risk engine module expects
+- [x] Implement the weighted formula as a standalone, pure function (no framework dependencies) so it's trivially testable and swappable later
+- [x] Implement contributing-factors output alongside the score (see §5)
+- [x] Unit-test against a handful of hand-constructed scenarios (e.g., high rain + steep terrain should score higher than low rain + flat terrain) to sanity-check the weights
+- [x] Confirm output format matches what the Backend risk engine module expects
 
 ### Phase 2 — Rule-Based Hourly Forecasting
-- [ ] Extend Stage A to accept hourly forecast weather data and produce a risk score **per future hour**, not just current
-- [ ] Add a confidence value that decreases with hour-offset (simple linear or step decay is fine for the hackathon)
-- [ ] Test that forecasted risk trends move sensibly with forecasted rainfall trends (e.g., a forecast showing increasing rain should show increasing risk + appropriately lower confidence far out)
-- [ ] Hand off to Backend team for integration into `/api/risk/{segment_id}/forecast` and offline packaging
+- [x] Extend Stage A to accept hourly forecast weather data and produce a risk score **per future hour**, not just current
+- [x] Add a confidence value that decreases with hour-offset (simple linear or step decay is fine for the hackathon)
+- [x] Test that forecasted risk trends move sensibly with forecasted rainfall trends (e.g., a forecast showing increasing rain should show increasing risk + appropriately lower confidence far out)
+- [x] Hand off to Backend team for integration into `/api/risk/{segment_id}/forecast` and offline packaging
 
 ### Phase 3 — Data Preparation (only if pursuing Stage B)
-- [ ] Assemble or simulate a historical dataset with the features listed in §2
-- [ ] Clean data: remove duplicates, invalid coordinates/values, normalize formats
-- [ ] Engineer derived features (rainfall rate-of-change, distance-from-river, etc.)
-- [ ] Split into train/validation/test sets, being careful to avoid leakage (e.g., don't let the same segment's future data leak into training for its past)
-- [ ] Document clearly which parts of the dataset are real vs. synthetic
+- [x] Assemble or simulate a historical dataset with the features listed in §2
+- [x] Clean data: remove duplicates, invalid coordinates/values, normalize formats
+- [x] Engineer derived features (rainfall rate-of-change, distance-from-river, etc.)
+- [x] Split into train/validation/test sets, being careful to avoid leakage (e.g., don't let the same segment's future data leak into training for its past)
+- [x] Document clearly which parts of the dataset are real vs. synthetic
 
 ### Phase 4 — Model Training (only if pursuing Stage B)
-- [ ] Train a simple baseline first (Logistic Regression) before more complex models — this gives a sanity-check floor
-- [ ] Train Random Forest and/or XGBoost
-- [ ] Tune basic hyperparameters (keep this light — time-boxed, not exhaustive)
-- [ ] Save the trained model artifact in a way the backend can load it (e.g., pickle/joblib + a clear loading function)
+- [x] Train a simple baseline first (Logistic Regression) before more complex models — this gives a sanity-check floor
+- [x] Train Random Forest and/or XGBoost
+- [x] Tune basic hyperparameters (keep this light — time-boxed, not exhaustive)
+- [x] Save the trained model artifact in a way the backend can load it (e.g., pickle/joblib + a clear loading function)
 
 ### Phase 5 — Evaluation
-- [ ] Evaluate all trained models on precision, recall, F1-score, and calibration (not accuracy alone)
-- [ ] Check performance specifically on the "disruption" class, given expected class imbalance
-- [ ] Compare against the Stage A rule-based model as a baseline — if Stage B doesn't clearly outperform Stage A, be honest about that in the pitch rather than forcing it in
-- [ ] Extract and sanity-check feature importances for explainability (§5)
+- [x] Evaluate all trained models on precision, recall, F1-score, and calibration (not accuracy alone)
+- [x] Check performance specifically on the "disruption" class, given expected class imbalance
+- [x] Compare against the Stage A rule-based model as a baseline — if Stage B doesn't clearly outperform Stage A, be honest about that in the pitch rather than forcing it in
+- [x] Extract and sanity-check feature importances for explainability (§5)
 
 ### Phase 6 — ML-Based Hourly Forecasting (only if Stage B is proceeding well)
-- [ ] Extend the trained model to output probability-of-disruption per future hour window, using forecasted weather as input
-- [ ] Derive confidence from model output (e.g., prediction probability spread, or explicit decay by hour-offset if the model doesn't naturally provide this)
-- [ ] Compare against the Stage A hourly forecast from Phase 2 on the same test scenarios
+- [x] Extend the trained model to output probability-of-disruption per future hour window, using forecasted weather as input
+- [x] Derive confidence from model output (e.g., prediction probability spread, or explicit decay by hour-offset if the model doesn't naturally provide this)
+- [x] Compare against the Stage A hourly forecast from Phase 2 on the same test scenarios
 
 ### Phase 7 — Integration Handoff
-- [ ] Confirm the model (Stage A or B, whichever is being used for the demo) is wrapped in a single, clean function/service the Backend can call without needing to know internal details
-- [ ] Confirm output schema exactly matches the Backend's `risk_scores` table fields (`risk_score`, `risk_level`, `confidence`, `contributing_factors`, `computed_for_hour`)
-- [ ] Run an end-to-end test: Backend requests a risk score → ML module returns a correctly formatted response → Backend correctly computes a route around it
+- [x] Confirm the model (Stage A or B, whichever is being used for the demo) is wrapped in a single, clean function/service the Backend can call without needing to know internal details
+- [x] Confirm output schema exactly matches the Backend's `risk_scores` table fields (`risk_score`, `risk_level`, `confidence`, `contributing_factors`, `computed_for_hour`)
+- [x] Run an end-to-end test: Backend requests a risk score → ML module returns a correctly formatted response → Backend correctly computes a route around it
 
 ### Phase 8 — Demo Scenario Support
-- [ ] Confirm the model responds correctly to the simulated disruption used in the demo (i.e., manually flipping a segment's disruption status visibly changes its risk score and forecast)
-- [ ] Confirm the risk-level jump used in the demo (for Risk-Delta Re-Alerting, per Backend doc §Phase 8) is large enough to clearly cross the alert threshold
+- [x] Confirm the model responds correctly to the simulated disruption used in the demo (i.e., manually flipping a segment's disruption status visibly changes its risk score and forecast)
+- [x] Confirm the risk-level jump used in the demo (for Risk-Delta Re-Alerting, per Backend doc §Phase 8) is large enough to clearly cross the alert threshold
 
 ### Phase 9 — Documentation & Fallback Plan
-- [ ] Document which stage (A or B) is being used in the final demo, and why
-- [ ] If Stage B was attempted but isn't reliable in time, confirm Stage A is fully wired as the fallback and that the pitch explicitly frames Stage B as "future scope, prototyped" rather than claiming it's production-ready
-- [ ] Prepare a short, honest explanation of model limitations for judge Q&A (data quality, class imbalance, synthetic data if used, confidence not being a formal statistical guarantee)
+- [x] Document which stage (A or B) is being used in the final demo, and why
+- [x] If Stage B was attempted but isn't reliable in time, confirm Stage A is fully wired as the fallback and that the pitch explicitly frames Stage B as "future scope, prototyped" rather than claiming it's production-ready
+- [x] Prepare a short, honest explanation of model limitations for judge Q&A (data quality, class imbalance, synthetic data if used, confidence not being a formal statistical guarantee)
 
 ---
 
