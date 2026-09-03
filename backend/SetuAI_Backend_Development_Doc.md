@@ -1,4 +1,4 @@
-# SetuAI — Backend Development Document
+# SetuAI — Backend Development Document (Node.js + MongoDB)
 
 > Purpose: this document is written so an AI coding assistant (e.g. Claude Code) can be pointed at it and build the backend **in the correct sequence**, phase by phase, checking items off as it goes. Each phase assumes the previous phase is complete before starting.
 
@@ -8,16 +8,16 @@
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Backend framework | Python (FastAPI) | Async support, auto-generated OpenAPI docs, fast to prototype |
-| Database | PostgreSQL + PostGIS | PostGIS needed for geospatial queries (segments, distances) |
+| Backend framework | Node.js + Express | REST API layer |
+| Database | MongoDB (with Mongoose ODM) | Document store; geospatial queries via Mongo's `2dsphere` indexes |
 | Routing engine | OSRM (Open Source Routing Machine) | Self-hosted or Docker container; consumes OpenStreetMap data |
 | Map/road data | OpenStreetMap extracts (NER region) | |
-| Caching / offline payloads | Redis (optional, for hot risk-score cache) or simple DB table | |
+| Caching / offline payloads | Redis (optional, for hot risk-score cache) or a Mongo collection | |
 | Weather data | Any hourly-forecast weather API (e.g. Open-Meteo, OpenWeatherMap) | Needs **hourly forecast**, not just current conditions, for Predictive Offline Mode |
-| Auth (if needed) | JWT-based auth via FastAPI | Only if user accounts are in scope for the hackathon build |
+| Auth (if needed) | JWT-based auth (e.g. `jsonwebtoken` + `bcrypt`) | Only if user accounts are in scope for the hackathon build |
 | Deployment | Docker Compose locally; any cloud VM/container host for demo | Keep it simple — this is a hackathon build |
 
-Alternative backend: Node.js/Express, if the team is stronger in JS. This document assumes FastAPI; swap syntax accordingly if not.
+Note: this stack swap only affects storage/framework choices — the risk formula, route cost logic, and API contract stay identical to the FastAPI/PostgreSQL version, so the ML and Frontend docs remain compatible without changes.
 
 ---
 
@@ -27,79 +27,100 @@ The backend must: accept route requests, calculate/serve risk scores per road se
 
 ---
 
-## 3. Database Schema
+## 3. Database Schema (MongoDB Collections)
+
+Use Mongoose schemas. Where a relational design would use foreign keys, use either an `ObjectId` reference (for large/independent collections) or an embedded sub-document (for small, tightly-coupled data like hourly forecasts).
 
 ### `users`
-| Field | Type | Notes |
-|---|---|---|
-| user_id | UUID / PK | |
-| name | string | |
-| contact | string | phone/email |
-| user_type | enum | freight / accessibility / emergency |
-| accessibility_requirements | JSON | e.g. wheelchair-friendly, avoid steep terrain |
+```js
+{
+  _id: ObjectId,
+  name: String,
+  contact: String,
+  userType: { type: String, enum: ['freight', 'accessibility', 'emergency'] },
+  accessibilityRequirements: Object // e.g. { wheelchairFriendly: true, avoidSteepTerrain: true }
+}
+```
 
-### `road_segments`
-| Field | Type | Notes |
-|---|---|---|
-| segment_id | UUID / PK | |
-| start_lat, start_lon | float | |
-| end_lat, end_lon | float | |
-| road_type | string | |
-| slope / terrain_score | float | static terrain risk input |
-| accessibility_info | JSON | steepness, surface quality, etc. |
+### `roadSegments`
+```js
+{
+  _id: ObjectId,
+  startPoint: { type: { type: String, default: 'Point' }, coordinates: [Number] }, // [lon, lat], 2dsphere indexed
+  endPoint: { type: { type: String, default: 'Point' }, coordinates: [Number] },
+  roadType: String,
+  terrainScore: Number,
+  accessibilityInfo: Object // steepness, surface quality, etc.
+}
+```
 
-### `weather_data`
-| Field | Type | Notes |
-|---|---|---|
-| weather_id | UUID / PK | |
-| segment_id / location | FK / geo | |
-| rainfall_current | float | |
-| forecast_hourly | JSON array | **required for Predictive Offline Mode** — array of `{hour_offset, rainfall_forecast, confidence}` |
-| timestamp | datetime | |
+### `weatherData`
+```js
+{
+  _id: ObjectId,
+  segmentId: ObjectId, // ref: roadSegments
+  rainfallCurrent: Number,
+  forecastHourly: [
+    { hourOffset: Number, rainfallForecast: Number, confidence: Number }
+  ], // required for Predictive Offline Mode
+  timestamp: Date
+}
+```
 
 ### `disruptions`
-| Field | Type | Notes |
-|---|---|---|
-| disruption_id | UUID / PK | |
-| segment_id | FK | |
-| disruption_type | string | landslide / flood / blockage / accident |
-| severity | enum | |
-| status | enum | active / cleared / unverified |
-| reported_at | datetime | |
-| verified_at | datetime (nullable) | |
+```js
+{
+  _id: ObjectId,
+  segmentId: ObjectId, // ref: roadSegments
+  disruptionType: { type: String, enum: ['landslide', 'flood', 'blockage', 'accident'] },
+  severity: String,
+  status: { type: String, enum: ['active', 'cleared', 'unverified'] },
+  reportedAt: Date,
+  verifiedAt: Date // nullable
+}
+```
 
-### `risk_scores`
-| Field | Type | Notes |
-|---|---|---|
-| risk_id | UUID / PK | |
-| segment_id | FK | |
-| computed_for_hour | datetime | **key field** — this row represents a risk prediction for a specific hour, not just "now" |
-| risk_score | float | 0–1 or 0–100 |
-| risk_level | enum | Low / Moderate / High / Critical |
-| confidence | float | decays as computed_for_hour moves further into the future |
-| contributing_factors | JSON | breakdown of weighted inputs, for the "why this route" explanation |
-| computed_at | datetime | when this row was generated |
+### `riskScores`
+```js
+{
+  _id: ObjectId,
+  segmentId: ObjectId, // ref: roadSegments
+  computedForHour: Date, // key field — this row is a prediction FOR a specific hour, not just "now"
+  riskScore: Number, // 0-1 or 0-100
+  riskLevel: { type: String, enum: ['Low', 'Moderate', 'High', 'Critical'] },
+  confidence: Number, // decays as computedForHour moves further into the future
+  contributingFactors: Object, // breakdown of weighted inputs, for "why this route" explanation
+  computedAt: Date
+}
+```
+Recommend a compound index on `{ segmentId: 1, computedForHour: 1 }` for fast forecast lookups.
 
 ### `routes`
-| Field | Type | Notes |
-|---|---|---|
-| route_id | UUID / PK | |
-| user_id | FK (nullable) | |
-| source, destination | geo | |
-| mode | enum | freight / accessibility / emergency |
-| distance, estimated_time | float | |
-| risk_score_at_departure | float | **stored explicitly** — needed later for risk-delta comparison |
-| segments | JSON / array of FK | ordered list of segment_ids in the route |
-| created_at | datetime | |
+```js
+{
+  _id: ObjectId,
+  userId: ObjectId, // nullable ref: users
+  source: { type: { type: String, default: 'Point' }, coordinates: [Number] },
+  destination: { type: { type: String, default: 'Point' }, coordinates: [Number] },
+  mode: { type: String, enum: ['freight', 'accessibility', 'emergency'] },
+  distance: Number,
+  estimatedTime: Number,
+  riskScoreAtDeparture: Number, // stored explicitly — needed for risk-delta comparison later
+  segments: [ObjectId], // ordered list, ref: roadSegments
+  createdAt: Date
+}
+```
 
 ### `vehicles`
-| Field | Type | Notes |
-|---|---|---|
-| vehicle_id | UUID / PK | |
-| vehicle_type | string | |
-| accessibility_features | JSON | shared with accessibility mode AND emergency dispatch matching (cross-mode data) |
-| availability | bool | |
-| current_location | geo | |
+```js
+{
+  _id: ObjectId,
+  vehicleType: String,
+  accessibilityFeatures: Object, // shared with accessibility mode AND emergency dispatch matching (cross-mode data)
+  availability: Boolean,
+  currentLocation: { type: { type: String, default: 'Point' }, coordinates: [Number] }
+}
+```
 
 ---
 
@@ -108,23 +129,23 @@ The backend must: accept route requests, calculate/serve risk scores per road se
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/api/routes` | POST | Input: source, destination, mode, user requirements. Output: recommended + alternative routes, distance, time, risk score, explanation. |
-| `/api/risk/{segment_id}` | GET | Current risk score, level, contributing factors, last updated time. |
-| `/api/risk/{segment_id}/forecast` | GET | **New** — hourly risk forecast array for the next N hours, with confidence per hour. Powers Predictive Offline Mode. |
+| `/api/risk/:segmentId` | GET | Current risk score, level, contributing factors, last updated time. |
+| `/api/risk/:segmentId/forecast` | GET | Hourly risk forecast array for the next N hours, with confidence per hour. Powers Predictive Offline Mode. |
 | `/api/disruptions` | GET | Current known disruption records. |
 | `/api/disruptions` | POST | Submit a new disruption report (for future crowd-sourcing; can stub for MVP). |
 | `/api/weather` | GET | Weather info used by the risk engine. |
 | `/api/accessibility/match` | POST | Match accessible vehicle/transport options. |
-| `/api/offline/package` | GET | **New** — bundles map tiles + verified route + hourly risk forecast for a given route, for client-side caching before going offline. |
-| `/api/routes/{route_id}/risk-delta` | GET | **New** — compares `risk_score_at_departure` (stored on the route) against the current/live risk score for the same segments; returns whether the change crosses an alert threshold. Powers Risk-Delta Re-Alerting. |
+| `/api/offline/package` | GET | Bundles map tiles + verified route + hourly risk forecast for a given route, for client-side caching before going offline. |
+| `/api/routes/:routeId/risk-delta` | GET | Compares `riskScoreAtDeparture` (stored on the route) against the current/live risk score for the same segments; returns whether the change crosses an alert threshold. Powers Risk-Delta Re-Alerting. |
 
 ---
 
 ## 5. Core Backend Logic Modules
 
-1. **Risk Engine module** — computes `Risk Score = 0.40×Rainfall + 0.30×HistoricalClosure + 0.20×Terrain + 0.10×CurrentStatus` per segment; also computes the hourly forecast version using `forecast_hourly` weather data, with confidence decaying by hour-offset.
+1. **Risk Engine module** — computes `Risk Score = 0.40×Rainfall + 0.30×HistoricalClosure + 0.20×Terrain + 0.10×CurrentStatus` per segment; also computes the hourly forecast version using `forecastHourly` weather data, with confidence decaying by hour-offset. Keep this as a pure module (plain functions, no Express/Mongoose imports) so it stays independently testable and swappable for the ML team's model later.
 2. **Route Optimization module** — computes `Route Cost = Travel Time + α×RiskPenalty + β×UserConstraintPenalty`, with α/β sets per mode (Freight / Accessibility / Emergency), and calls OSRM for base candidate routes before applying cost weighting.
 3. **Offline Packaging module** — assembles the payload for `/api/offline/package`: verified route + relevant segment risk forecasts + confidence values + generation timestamp.
-4. **Risk-Delta module** — on request, re-runs the risk engine for the route's segments and diffs against the stored `risk_score_at_departure`, returning an alert flag if the delta crosses a defined threshold (e.g., one full risk-level jump).
+4. **Risk-Delta module** — on request, re-runs the risk engine for the route's segments and diffs against the stored `riskScoreAtDeparture`, returning an alert flag if the delta crosses a defined threshold (e.g., one full risk-level jump).
 
 ---
 
@@ -133,40 +154,42 @@ The backend must: accept route requests, calculate/serve risk scores per road se
 Work through phases top to bottom. Do not start a phase until the previous phase's checklist is fully checked — later phases assume earlier ones are working and testable.
 
 ### Phase 0 — Project Setup
-- [ ] Initialize FastAPI project structure (`app/`, `models/`, `routes/`, `services/`, `tests/`)
-- [ ] Set up PostgreSQL + PostGIS locally (Docker Compose recommended)
-- [ ] Set up environment config (`.env` for DB connection, weather API key, OSRM endpoint)
-- [ ] Confirm FastAPI dev server runs with a health-check endpoint (`GET /health`)
+- [ ] Initialize Node.js project (`npm init`), install Express, Mongoose, dotenv
+- [ ] Set up project structure (`src/models/`, `src/routes/`, `src/services/`, `src/tests/`)
+- [ ] Set up MongoDB locally (Docker Compose recommended) and confirm connection via Mongoose
+- [ ] Set up environment config (`.env` for Mongo URI, weather API key, OSRM endpoint)
+- [ ] Confirm Express dev server runs with a health-check endpoint (`GET /health`)
 
 ### Phase 1 — Database Models
-- [ ] Create ORM models (SQLAlchemy or similar) for: `users`, `road_segments`, `weather_data`, `disruptions`, `risk_scores`, `routes`, `vehicles`
-- [ ] Write and run migrations
-- [ ] Seed the database with a small sample set of segments covering the demo route (for the landslide demo scenario)
-- [ ] Verify all tables are queryable via a simple script
+- [ ] Create Mongoose schemas/models for: `users`, `roadSegments`, `weatherData`, `disruptions`, `riskScores`, `routes`, `vehicles`
+- [ ] Add `2dsphere` indexes on all geo fields (`startPoint`, `endPoint`, `source`, `destination`, `currentLocation`)
+- [ ] Add compound index on `riskScores` (`segmentId` + `computedForHour`)
+- [ ] Write a seed script populating a small sample set of segments covering the demo route (for the landslide demo scenario)
+- [ ] Verify all collections are queryable via a simple script or MongoDB Compass
 
 ### Phase 2 — Weather & External Data Ingestion
 - [ ] Integrate weather API client; confirm it returns **current** conditions
 - [ ] Extend integration to pull **hourly forecast** data (required for Phase 5)
-- [ ] Store weather results into `weather_data` table on a scheduled or on-demand basis
+- [ ] Store weather results into `weatherData` on a scheduled or on-demand basis
 - [ ] Manually verify forecast data looks sane for the demo region
 
 ### Phase 3 — Risk Engine (Current State)
-- [ ] Implement the weighted risk formula as a standalone function, unit-testable independent of the API
-- [ ] Wire it to read from `road_segments`, `weather_data`, `disruptions`
-- [ ] Write results into `risk_scores` (with `computed_for_hour` = now)
-- [ ] Build and test `GET /api/risk/{segment_id}` against seeded data
-- [ ] Confirm `contributing_factors` breakdown is returned (needed later for "why this route" explanation)
+- [ ] Implement the weighted risk formula as a standalone function, unit-testable independent of Express/Mongoose
+- [ ] Wire it to read from `roadSegments`, `weatherData`, `disruptions`
+- [ ] Write results into `riskScores` (with `computedForHour` = now)
+- [ ] Build and test `GET /api/risk/:segmentId` against seeded data
+- [ ] Confirm `contributingFactors` breakdown is returned (needed later for "why this route" explanation)
 
 ### Phase 4 — Routing Engine Integration
 - [ ] Stand up OSRM (Docker) with OSM data for the demo region
 - [ ] Build a service wrapper that requests candidate routes from OSRM
-- [ ] Implement the Route Cost function, combining OSRM output with `risk_scores`
+- [ ] Implement the Route Cost function, combining OSRM output with `riskScores`
 - [ ] Build and test `POST /api/routes` returning a recommended route + at least one alternative, for a single mode (start with Emergency, since it's the demo's lead mode)
 
 ### Phase 5 — Predictive Risk Forecasting
-- [ ] Extend the Risk Engine to compute hourly forecasted risk scores using `forecast_hourly` weather data
-- [ ] Store forecast rows in `risk_scores` with `computed_for_hour` set per future hour, and `confidence` decreasing with hour-offset
-- [ ] Build and test `GET /api/risk/{segment_id}/forecast`
+- [ ] Extend the Risk Engine to compute hourly forecasted risk scores using `forecastHourly` weather data
+- [ ] Store forecast documents in `riskScores` with `computedForHour` set per future hour, and `confidence` decreasing with hour-offset
+- [ ] Build and test `GET /api/risk/:segmentId/forecast`
 - [ ] Sanity-check that confidence values decay sensibly and are never presented as certainty
 
 ### Phase 6 — Mode-Specific Logic
@@ -178,10 +201,10 @@ Work through phases top to bottom. Do not start a phase until the previous phase
 ### Phase 7 — Offline Support
 - [ ] Implement `GET /api/offline/package`: bundle route + segment risk forecasts + confidence + timestamp
 - [ ] Confirm payload size is reasonable for client-side caching
-- [ ] Store `risk_score_at_departure` on the `routes` row when a route is finalized/selected
+- [ ] Store `riskScoreAtDeparture` on the `routes` document when a route is finalized/selected
 
 ### Phase 8 — Risk-Delta Re-Alerting
-- [ ] Implement `GET /api/routes/{route_id}/risk-delta`: recompute current risk for the route's segments, diff against `risk_score_at_departure`
+- [ ] Implement `GET /api/routes/:routeId/risk-delta`: recompute current risk for the route's segments, diff against `riskScoreAtDeparture`
 - [ ] Define and implement the alert threshold (e.g., any full risk-level jump, or a numeric delta above X)
 - [ ] Test with a seeded scenario where risk is manually bumped up between "departure" and "reconnect" to confirm the alert fires
 
@@ -191,18 +214,18 @@ Work through phases top to bottom. Do not start a phase until the previous phase
 - [ ] Confirm triggering a simulated disruption correctly propagates into risk scores and route recommendations on the next request
 
 ### Phase 10 — Security & Reliability Basics
-- [ ] Add input validation on all POST endpoints
-- [ ] Add basic rate limiting
+- [ ] Add input validation on all POST endpoints (e.g. `express-validator` or `Joi`)
+- [ ] Add basic rate limiting (e.g. `express-rate-limit`)
 - [ ] Ensure HTTPS is used in any deployed/demo environment
 - [ ] Add timestamping + a verification-status field on disruption reports (even if verification logic itself is stubbed)
 
 ### Phase 11 — Testing & Demo Readiness
-- [ ] Write/run tests covering: risk calculation, route cost calculation, offline packaging, risk-delta detection
+- [ ] Write/run tests (e.g. Jest) covering: risk calculation, route cost calculation, offline packaging, risk-delta detection
 - [ ] Run through the full demo script end-to-end against the backend (Emergency → simulate blockage → reroute → Freight → Accessibility → offline package → risk-delta on reconnect)
 - [ ] Confirm response times are acceptable for a live demo (pre-warm caches if needed)
 
 ### Phase 12 — Deployment
-- [ ] Containerize backend (Dockerfile / Docker Compose including DB and OSRM)
+- [ ] Containerize backend (Dockerfile / Docker Compose including MongoDB and OSRM)
 - [ ] Deploy to a simple cloud host or run locally reliably for the demo
 - [ ] Confirm the deployed/demo instance has the same seeded demo-route data as local testing
 
@@ -213,4 +236,4 @@ Work through phases top to bottom. Do not start a phase until the previous phase
 - Work phase by phase; do not skip ahead even if a later phase looks easy — later phases depend on data/structures created earlier.
 - After each phase, produce a short summary of what was built and what was tested, before moving to the next phase.
 - If a phase's checklist item can't be completed due to a missing dependency (e.g., no real weather API key yet), stub it clearly and flag it rather than silently skipping.
-- Keep the Risk Engine and Route Optimization logic as pure, independently testable functions/services — the API layer should be a thin wrapper around them. This makes it easy to swap the rule-based risk model for an ML model later without touching the API contract.
+- Keep the Risk Engine and Route Optimization logic as pure, independently testable modules — the Express route handlers should be a thin wrapper around them. This makes it easy to swap the rule-based risk model for an ML model later without touching the API contract.
