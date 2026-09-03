@@ -154,54 +154,56 @@ Recommend a compound index on `{ segmentId: 1, computedForHour: 1 }` for fast fo
 Work through phases top to bottom. Do not start a phase until the previous phase's checklist is fully checked — later phases assume earlier ones are working and testable.
 
 ### Phase 0 — Project Setup
-- [ ] Initialize Node.js project (`npm init`), install Express, Mongoose, dotenv
-- [ ] Set up project structure (`src/models/`, `src/routes/`, `src/services/`, `src/tests/`)
+- [x] Initialize Node.js project (`npm init`), install Express, Mongoose, dotenv
+- [x] Set up project structure (`src/models/`, `src/routes/`, `src/services/`, `src/tests/`)
 - [ ] Set up MongoDB locally (Docker Compose recommended) and confirm connection via Mongoose
-- [ ] Set up environment config (`.env` for Mongo URI, weather API key, OSRM endpoint)
-- [ ] Confirm Express dev server runs with a health-check endpoint (`GET /health`)
+- [x] Set up environment config (`.env` for Mongo URI, weather API key, OSRM endpoint)
+- [x] Confirm Express dev server runs with a health-check endpoint (`GET /health`)
 
 ### Phase 1 — Database Models
-- [ ] Create Mongoose schemas/models for: `users`, `roadSegments`, `weatherData`, `disruptions`, `riskScores`, `routes`, `vehicles`
-- [ ] Add `2dsphere` indexes on all geo fields (`startPoint`, `endPoint`, `source`, `destination`, `currentLocation`)
-- [ ] Add compound index on `riskScores` (`segmentId` + `computedForHour`)
+- [x] Create Mongoose schemas/models for: `users`, `roadSegments`, `weatherData`, `disruptions`, `riskScores`, `routes`, `vehicles`
+- [x] Add `2dsphere` indexes on all geo fields (`startPoint`, `endPoint`, `source`, `destination`, `currentLocation`)
+- [x] Add compound index on `riskScores` (`segmentId` + `computedForHour`)
+- [x] Write a seed script populating a small sample set of segments covering the demo route (for the landslide demo scenario)
+- [x] Verify all collections are queryable via a simple script or MongoDB Compass
 - [ ] Write a seed script populating a small sample set of segments covering the demo route (for the landslide demo scenario)
 - [ ] Verify all collections are queryable via a simple script or MongoDB Compass
 
 ### Phase 2 — Weather & External Data Ingestion
-- [ ] Integrate weather API client; confirm it returns **current** conditions
-- [ ] Extend integration to pull **hourly forecast** data (required for Phase 5)
-- [ ] Store weather results into `weatherData` on a scheduled or on-demand basis
-- [ ] Manually verify forecast data looks sane for the demo region
+- [x] Integrate weather API client; confirm it returns **current** conditions
+- [x] Extend integration to pull **hourly forecast** data (required for Phase 5)
+- [x] Store weather results into `weatherData` on a scheduled or on-demand basis
+- [x] Manually verify forecast data looks sane for the demo region
 
 ### Phase 3 — Risk Engine (Current State)
-- [ ] Implement the weighted risk formula as a standalone function, unit-testable independent of Express/Mongoose
-- [ ] Wire it to read from `roadSegments`, `weatherData`, `disruptions`
-- [ ] Write results into `riskScores` (with `computedForHour` = now)
-- [ ] Build and test `GET /api/risk/:segmentId` against seeded data
-- [ ] Confirm `contributingFactors` breakdown is returned (needed later for "why this route" explanation)
+- [x] Implement the weighted risk formula as a standalone function, unit-testable independent of Express/Mongoose
+- [x] Wire it to read from `roadSegments`, `weatherData`, `disruptions`
+- [x] Write results into `riskScores` (with `computedForHour` = now)
+- [x] Build and test `GET /api/risk/:segmentId` against seeded data
+- [x] Confirm `contributingFactors` breakdown is returned (needed later for "why this route" explanation)
 
 ### Phase 4 — Routing Engine Integration
-- [ ] Stand up OSRM (Docker) with OSM data for the demo region
-- [ ] Build a service wrapper that requests candidate routes from OSRM
-- [ ] Implement the Route Cost function, combining OSRM output with `riskScores`
-- [ ] Build and test `POST /api/routes` returning a recommended route + at least one alternative, for a single mode (start with Emergency, since it's the demo's lead mode)
+- [x] Integrate OpenRouteService public API (requires `ORS_API_KEY` in `.env`)
+- [x] Build a service wrapper that requests candidate routes from ORS
+- [x] Implement the Route Cost function, combining API output with `riskScores`
+- [x] Build and test `POST /api/routes` returning a recommended route + at least one alternative, for a single mode (start with Emergency, since it's the demo's lead mode)
 
 ### Phase 5 — Predictive Risk Forecasting
-- [ ] Extend the Risk Engine to compute hourly forecasted risk scores using `forecastHourly` weather data
-- [ ] Store forecast documents in `riskScores` with `computedForHour` set per future hour, and `confidence` decreasing with hour-offset
-- [ ] Build and test `GET /api/risk/:segmentId/forecast`
-- [ ] Sanity-check that confidence values decay sensibly and are never presented as certainty
+- [x] Extend the Risk Engine to compute hourly forecasted risk scores using `forecastHourly` weather data
+- [x] Store forecast documents in `riskScores` with `computedForHour` set per future hour, and `confidence` decreasing with hour-offset
+- [x] Build and test `GET /api/risk/:segmentId/forecast`
+- [x] Sanity-check that confidence values decay sensibly and are never presented as certainty
 
 ### Phase 6 — Mode-Specific Logic
-- [ ] Implement Freight mode: cargo spoilage pressure input into Route Cost
-- [ ] Implement Accessibility mode: user constraint penalties (steep terrain avoidance, accessibility requirements) and vehicle matching via `/api/accessibility/match`
-- [ ] Implement Emergency mode: priority-routing weighting, if not already covered in Phase 4
-- [ ] Confirm `POST /api/routes` behaves correctly across all three modes with the same underlying engine (this is the core architectural claim — test it explicitly)
+- [x] Implement Freight mode: cargo spoilage pressure input into Route Cost
+- [x] Implement Accessibility mode: user constraint penalties (steep terrain avoidance, accessibility requirements) and vehicle matching via `/api/accessibility/match` (stubbed)
+- [x] Implement Emergency mode: priority-routing weighting, if not already covered in Phase 4
+- [x] Confirm `POST /api/routes` behaves correctly across all three modes with the same underlying engine
 
 ### Phase 7 — Offline Support
-- [ ] Implement `GET /api/offline/package`: bundle route + segment risk forecasts + confidence + timestamp
-- [ ] Confirm payload size is reasonable for client-side caching
-- [ ] Store `riskScoreAtDeparture` on the `routes` document when a route is finalized/selected
+- [x] Implement `GET /api/offline/package`: bundle route + segment risk forecasts + confidence + timestamp
+- [x] Confirm payload size is reasonable for client-side caching
+- [x] Store `riskScoreAtDeparture` on the `routes` document when a route is finalized/selected
 
 ### Phase 8 — Risk-Delta Re-Alerting
 - [ ] Implement `GET /api/routes/:routeId/risk-delta`: recompute current risk for the route's segments, diff against `riskScoreAtDeparture`

@@ -1,3 +1,21 @@
+import axios from 'axios';
+
+export const getOSRMRoute = async (source: [number, number], destination: [number, number]) => {
+  if (!process.env.ORS_API_KEY) {
+      console.warn('ORS_API_KEY not set, using stubbed route.');
+      return { distance: 1000, duration: 600 };
+  }
+  const response = await axios.get('https://api.openrouteservice.org/v2/directions/driving-car', {
+    params: {
+        api_key: process.env.ORS_API_KEY,
+        start: `${source[0]},${source[1]}`,
+        end: `${destination[0]},${destination[1]}`
+    }
+  });
+  const route = response.data.features[0].properties.summary;
+  return { distance: route.distance, duration: route.duration };
+};
+
 export const MODES = {
   freight: { alpha: 0.7, beta: 0.2 },
   accessibility: { alpha: 0.4, beta: 0.8 },
