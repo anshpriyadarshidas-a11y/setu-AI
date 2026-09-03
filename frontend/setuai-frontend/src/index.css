@@ -1,15 +1,23 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+@theme {
+  --color-bg-primary: #0a0a0a;
+  --color-bg-secondary: #171717;
+  --color-text-primary: #e5e5e5;
+  --color-text-secondary: #a3a3a3;
+  --color-border: #262626;
+}
+
 :root {
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
-  background: #f8f9fa;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
 
 #root {

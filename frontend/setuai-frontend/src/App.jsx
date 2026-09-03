@@ -17,7 +17,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-svh bg-gray-50">
+      <div className="flex flex-col min-h-svh bg-zinc-950">
         <TopNav mode={mode} setMode={setMode} syncStatus={syncStatus} user={user} />
         <Routes>
           <Route path="/" element={<HomeScreen setMode={setMode} />} />

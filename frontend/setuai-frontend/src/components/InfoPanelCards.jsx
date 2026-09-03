@@ -4,10 +4,10 @@ const RISK_LABELS = { low: 'Low Risk', moderate: 'Moderate Risk', high: 'High Ri
 
 export function RouteSummaryCard({ route }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Recommended Route</p>
+    <div className="bg-zinc-900 rounded-xl shadow-sm border border-zinc-800 p-4">
+      <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Recommended Route</p>
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">{route.name}</h2>
+        <h2 className="text-2xl font-bold text-white">{route.name}</h2>
         <span
           className="flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold text-white"
           style={{ background: RISK_COLORS[route.riskLevel] }}
@@ -23,13 +23,13 @@ export function RouteSummaryCard({ route }) {
 export function StatTilesRow({ route }) {
   return (
     <div className="grid grid-cols-2 gap-3">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Distance</p>
-        <p className="text-3xl font-bold text-gray-900">{route.distanceKm} <span className="text-base font-medium text-gray-500">km</span></p>
+      <div className="bg-zinc-900 rounded-xl shadow-sm border border-zinc-800 p-4">
+        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Distance</p>
+        <p className="text-3xl font-bold text-white">{route.distanceKm} <span className="text-base font-medium text-zinc-500">km</span></p>
       </div>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">ETA</p>
-        <p className="text-3xl font-bold text-gray-900">{route.etaText}</p>
+      <div className="bg-zinc-900 rounded-xl shadow-sm border border-zinc-800 p-4">
+        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">ETA</p>
+        <p className="text-3xl font-bold text-white">{route.etaText}</p>
       </div>
     </div>
   )
@@ -118,7 +118,7 @@ export function PrimaryButton({ label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full bg-gray-900 hover:bg-gray-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-base cursor-pointer border-0"
+      className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-base cursor-pointer border-0"
     >
       {label}
     </button>

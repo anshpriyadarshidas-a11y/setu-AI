@@ -41,11 +41,11 @@ export default function DashboardScreen({ mode, syncStatus, setSyncStatus }) {
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-gray-50">
-      <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100">
+    <div className="flex flex-col flex-1 bg-zinc-950">
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800">
         <button
           onClick={() => navigate('/location')}
-          className="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1 cursor-pointer bg-transparent border-0"
+          className="text-sm text-zinc-500 hover:text-white flex items-center gap-1 cursor-pointer bg-transparent border-0"
         >
           ← Back
         </button>
@@ -54,8 +54,8 @@ export default function DashboardScreen({ mode, syncStatus, setSyncStatus }) {
             onClick={handleSimulateDisruption}
             className={`text-xs font-semibold px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
               disrupted
-                ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
-                : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                ? 'bg-red-900/30 text-red-400 border-red-800 hover:bg-red-900/50'
+                : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
             }`}
           >
             {disrupted ? '✓ Disruption active' : 'Simulate disruption'}
@@ -64,15 +64,15 @@ export default function DashboardScreen({ mode, syncStatus, setSyncStatus }) {
             onClick={handleOfflineToggle}
             className={`text-xs font-semibold px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${
               syncStatus.isOffline
-                ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                ? 'bg-green-900/30 text-green-400 border-green-800 hover:bg-green-900/50'
+                : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
             }`}
           >
             {syncStatus.isOffline ? '⚡ Go online' : 'Go offline'}
           </button>
           <button
             onClick={() => navigate('/disruptions')}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-colors"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-zinc-700 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 cursor-pointer transition-colors"
           >
             Live map
           </button>

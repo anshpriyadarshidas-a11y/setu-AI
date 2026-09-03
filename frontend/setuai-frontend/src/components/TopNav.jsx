@@ -14,26 +14,26 @@ export default function TopNav({ mode, setMode, syncStatus, user }) {
   }
 
   return (
-    <nav className="w-full bg-gray-900 text-white flex items-center justify-between px-4 py-3 sticky top-0 z-50">
+    <nav className="w-full bg-black text-white flex items-center justify-between px-4 py-3 sticky top-0 z-50 border-b border-zinc-800">
       <button
         onClick={() => navigate('/')}
         className="flex items-center gap-2 cursor-pointer bg-transparent border-0 text-white"
       >
-        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-sm select-none">
+        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm select-none">
           S
         </div>
         <span className="font-semibold text-lg tracking-tight">SetuAI</span>
       </button>
 
-      <div className="flex items-center gap-1 bg-gray-800 rounded-full px-1 py-1">
+      <div className="flex items-center gap-1 bg-zinc-900 rounded-full px-1 py-1">
         {MODES.map((m) => (
           <button
             key={m}
             onClick={() => handleModeSwitch(m)}
             className={`px-3 py-1 rounded-full text-sm font-medium transition-all cursor-pointer border-0 ${
               mode === m
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-400 hover:text-white bg-transparent'
+                ? 'bg-blue-600 text-white'
+                : 'text-zinc-400 hover:text-white bg-transparent'
             }`}
           >
             {MODE_LABELS[m]}
@@ -52,7 +52,7 @@ export default function TopNav({ mode, setMode, syncStatus, user }) {
               : `Synced ${syncStatus.lastSyncedMinutesAgo} min ago`}
           </span>
         </div>
-        <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center font-bold text-xs select-none">
+        <div className="w-8 h-8 rounded-full bg-zinc-600 flex items-center justify-center font-bold text-xs select-none">
           {user.initials}
         </div>
       </div>

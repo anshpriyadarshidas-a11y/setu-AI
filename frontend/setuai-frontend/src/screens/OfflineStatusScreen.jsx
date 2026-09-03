@@ -12,7 +12,7 @@ export default function OfflineStatusScreen({ mode, syncStatus, setSyncStatus })
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-gray-50 p-4">
+    <div className="flex flex-col flex-1 bg-zinc-950 p-4">
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/dashboard')}

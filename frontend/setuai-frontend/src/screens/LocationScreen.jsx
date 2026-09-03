@@ -44,13 +44,13 @@ export default function LocationScreen({ mode }) {
           <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
             {MODE_LABELS[mode]} Mode
           </span>
-          <h2 className="text-2xl font-bold text-gray-900 mt-3">Where are you going?</h2>
-          <p className="text-gray-500 text-sm mt-1">Enter your source and destination to get a risk-aware route.</p>
+          <h2 className="text-2xl font-bold text-white mt-3">Where are you going?</h2>
+          <p className="text-zinc-400 text-sm mt-1">Enter your source and destination to get a risk-aware route.</p>
         </div>
 
         <form onSubmit={handleFind} className="space-y-4 mb-5">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
               Current location / Source
             </label>
             <div className="flex gap-2">
@@ -59,12 +59,12 @@ export default function LocationScreen({ mode }) {
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
                 placeholder="Enter starting point"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="flex-1 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 type="button"
                 onClick={() => setSource('Current location')}
-                className="px-3 py-3 border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 text-sm cursor-pointer bg-white"
+                className="px-3 py-3 border border-zinc-700 rounded-xl text-zinc-400 hover:bg-zinc-800 text-sm cursor-pointer bg-zinc-900"
                 title="Use current location"
               >
                 📍
@@ -73,7 +73,7 @@ export default function LocationScreen({ mode }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
               Destination
             </label>
             <input
@@ -81,19 +81,19 @@ export default function LocationScreen({ mode }) {
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               placeholder="Enter destination"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-gray-900 hover:bg-gray-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-base cursor-pointer border-0"
+            className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-base cursor-pointer border-0"
           >
             Find route →
           </button>
         </form>
 
-        <div className="rounded-xl overflow-hidden shadow-sm border border-gray-100" style={{ height: 220 }}>
+        <div className="rounded-xl overflow-hidden shadow-sm border border-zinc-800" style={{ height: 220 }}>
           <MapContainer center={[26.38, 92.09]} zoom={7} scrollWheelZoom={false} style={{ width: '100%', height: '100%' }}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
