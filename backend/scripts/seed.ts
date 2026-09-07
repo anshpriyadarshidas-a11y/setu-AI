@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { RoadSegmentModel } from '../src/models/RoadSegment.js';
-import { VehicleModel } from '../src/models/Vehicle.js';
+import { RoadSegmentModel } from '../src/models/RoadSegment.ts';
+import { VehicleModel } from '../src/models/Vehicle.ts';
 import dotenv from 'dotenv';
 
 dotenv.config();

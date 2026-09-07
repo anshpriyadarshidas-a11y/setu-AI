@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import RouteMap from '../components/RouteMap'
 import {
@@ -11,23 +11,48 @@ import {
   AccessibilityRequirementsCard,
   PrimaryButton,
 } from '../components/InfoPanelCards'
-import { mockData } from '../data/mockData'
 
 const now = new Date()
 const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
 export default function DashboardScreen({ mode, syncStatus, setSyncStatus }) {
   const navigate = useNavigate()
-  const data = mockData[mode]
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [disrupted, setDisrupted] = useState(false)
 
-  const effectiveAlert = disrupted ? data.alert : null
-  const effectiveHazard = disrupted ? data.hazard : null
+  useEffect(() => {
+    // Replace mock with API fetch
+    fetch(`http://localhost:8000/api/routes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            // In a real app, populate these from user context/inputs
+            source: { coordinates: [91.73, 26.14] }, 
+            destination: { coordinates: [91.89, 25.57] }, 
+            mode: mode 
+        })
+    })
+      .then(res => res.json())
+      .then(json => {
+        setData(json)
+        setLoading(false)
+      })
+  }, [mode])
+
+  if (loading) return <div className="text-white">Loading...</div>
+  
+  const effectiveAlert = null // disrupted ? data.alert : null
+  const effectiveHazard = null // disrupted ? data.hazard : null
   const effectiveRoute = {
-    ...data.route,
-    blockedPath: disrupted ? data.route.blockedPath : null,
-    riskLevel: disrupted ? (data.route.riskLevel === 'low' ? 'high' : data.route.riskLevel) : data.route.riskLevel,
+    ...data.recommended,
+    riskLevel: disrupted ? 'high' : 'low',
+    explanation: 'Route optimized for ' + mode,
+    blockedPath: null // Added definition
   }
+  const disruptions = [] // disrupted ? data.disruptions : []
 
   function handleSimulateDisruption() {
     setDisrupted((d) => !d)
@@ -85,7 +110,7 @@ export default function DashboardScreen({ mode, syncStatus, setSyncStatus }) {
             <RouteMap
               route={effectiveRoute}
               hazard={effectiveHazard}
-              disruptions={data.disruptions}
+              disruptions={disruptions}
               showDisruptions={disrupted}
               lastUpdate={timeStr}
             />

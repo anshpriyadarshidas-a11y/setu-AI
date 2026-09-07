@@ -7,7 +7,7 @@ import { RiskScoreModel } from '../models/RiskScore.js';
 
 const router = Router();
 
-router.get('/api/risk/:segmentId', async (req, res) => {
+router.get('/risk/:segmentId', async (req, res) => {
     const segment = await RoadSegmentModel.findOne({ segment_id: req.params.segmentId });
     if (!segment) return res.status(404).json({ error: 'Segment not found' });
 
@@ -31,7 +31,7 @@ router.get('/api/risk/:segmentId', async (req, res) => {
     res.json(result);
 });
 
-router.get('/api/risk/:segmentId/forecast', async (req, res) => {
+router.get('/risk/:segmentId/forecast', async (req, res) => {
     const segment = await RoadSegmentModel.findOne({ segment_id: req.params.segmentId });
     if (!segment) return res.status(404).json({ error: 'Segment not found' });
 

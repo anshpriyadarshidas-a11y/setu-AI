@@ -5,13 +5,13 @@ import { RoadSegmentModel } from '../models/RoadSegment.js';
 const router = Router();
 
 // GET all disruptions
-router.get('/api/disruptions', async (req, res) => {
+router.get('/disruptions', async (req, res) => {
     const disruptions = await DisruptionModel.find().sort({ reportedAt: -1 });
     res.json(disruptions);
 });
 
 // POST new disruption
-router.post('/api/disruptions', async (req, res) => {
+router.post('/disruptions', async (req, res) => {
     const { segmentId, disruptionType, severity, description } = req.body;
     const disruption = await DisruptionModel.create({
         segmentId,
@@ -23,7 +23,7 @@ router.post('/api/disruptions', async (req, res) => {
 });
 
 // Admin override: Simulate disruption
-router.post('/api/disruptions/simulate', async (req, res) => {
+router.post('/disruptions/simulate', async (req, res) => {
     const { segmentId, disruptionType, severity } = req.body;
     const disruption = await DisruptionModel.create({
         segmentId,

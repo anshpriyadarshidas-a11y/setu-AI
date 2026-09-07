@@ -5,7 +5,7 @@ import { WeatherDataModel } from '../models/WeatherData.js';
 
 const router = Router();
 
-router.get('/api/offline/package', async (req, res) => {
+router.get('/offline/package', async (req, res) => {
     const { routeId } = req.query;
     
     // 1. Fetch route

@@ -206,25 +206,25 @@ Work through phases top to bottom. Do not start a phase until the previous phase
 - [x] Store `riskScoreAtDeparture` on the `routes` document when a route is finalized/selected
 
 ### Phase 8 — Risk-Delta Re-Alerting
-- [ ] Implement `GET /api/routes/:routeId/risk-delta`: recompute current risk for the route's segments, diff against `riskScoreAtDeparture`
-- [ ] Define and implement the alert threshold (e.g., any full risk-level jump, or a numeric delta above X)
-- [ ] Test with a seeded scenario where risk is manually bumped up between "departure" and "reconnect" to confirm the alert fires
+- [x] Implement `GET /api/routes/:routeId/risk-delta`: recompute current risk for the route's segments, diff against `riskScoreAtDeparture`
+- [x] Define and implement the alert threshold (e.g., any full risk-level jump, or a numeric delta above X)
+- [x] Test with a seeded scenario where risk is manually bumped up between "departure" and "reconnect" to confirm the alert fires
 
 ### Phase 9 — Disruptions & Simulation Support (for Demo)
-- [ ] Implement `GET /api/disruptions`
-- [ ] Implement a way to **manually trigger a simulated disruption** (e.g., a debug/admin endpoint or seed script) that flips a segment's status — this is what the demo's "landslide" step relies on
-- [ ] Confirm triggering a simulated disruption correctly propagates into risk scores and route recommendations on the next request
+- [x] Implement `GET /api/disruptions`
+- [x] Implement a way to **manually trigger a simulated disruption** (e.g., a debug/admin endpoint or seed script) that flips a segment's status
+- [x] Confirm triggering a simulated disruption correctly propagates into risk scores and route recommendations on the next request
 
 ### Phase 10 — Security & Reliability Basics
-- [ ] Add input validation on all POST endpoints (e.g. `express-validator` or `Joi`)
-- [ ] Add basic rate limiting (e.g. `express-rate-limit`)
+- [x] Add input validation on all POST endpoints (`express-validator` implemented)
+- [x] Add basic rate limiting (`express-rate-limit` implemented)
 - [ ] Ensure HTTPS is used in any deployed/demo environment
-- [ ] Add timestamping + a verification-status field on disruption reports (even if verification logic itself is stubbed)
+- [x] Add timestamping + a verification-status field on disruption reports
 
 ### Phase 11 — Testing & Demo Readiness
-- [ ] Write/run tests (e.g. Jest) covering: risk calculation, route cost calculation, offline packaging, risk-delta detection
-- [ ] Run through the full demo script end-to-end against the backend (Emergency → simulate blockage → reroute → Freight → Accessibility → offline package → risk-delta on reconnect)
-- [ ] Confirm response times are acceptable for a live demo (pre-warm caches if needed)
+- [x] Write/run tests (e.g. Jest) covering: risk calculation, route cost calculation, offline packaging, risk-delta detection
+- [ ] Run through the full demo script end-to-end
+- [ ] Confirm response times are acceptable for a live demo
 
 ### Phase 12 — Deployment
 - [ ] Containerize backend (Dockerfile / Docker Compose including MongoDB and OSRM)
