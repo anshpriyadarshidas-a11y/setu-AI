@@ -114,11 +114,15 @@ export function AccessibilityRequirementsCard({ accessibility }) {
   )
 }
 
-export function PrimaryButton({ label, onClick }) {
+export function PrimaryButton({ label, onClick, active }) {
   return (
     <button
       onClick={onClick}
-      className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-3.5 rounded-xl transition-colors text-base cursor-pointer border-0"
+      className={`w-full font-semibold py-3.5 rounded-xl transition-colors text-base cursor-pointer border-0 ${
+        active
+          ? 'bg-green-700 hover:bg-green-600 text-white'
+          : 'bg-zinc-800 hover:bg-zinc-700 text-white'
+      }`}
     >
       {label}
     </button>

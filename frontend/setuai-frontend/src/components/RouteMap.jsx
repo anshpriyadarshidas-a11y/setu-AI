@@ -1,4 +1,5 @@
-import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, Tooltip } from 'react-leaflet'
+import { useEffect } from 'react'
+import { MapContainer, TileLayer, Polyline, CircleMarker, Marker, Popup, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
 const hazardIcon = L.divIcon({
@@ -7,6 +8,16 @@ const hazardIcon = L.divIcon({
   iconSize: [28, 28],
   iconAnchor: [14, 14],
 })
+
+function RecenterMap({ center }) {
+  const map = useMap()
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom(), { animate: true })
+    }
+  }, [center, map])
+  return null
+}
 
 export default function RouteMap({ route, hazard, disruptions, showDisruptions = false, lastUpdate }) {
   const center = route?.recommendedPath
@@ -25,6 +36,8 @@ export default function RouteMap({ route, hazard, disruptions, showDisruptions =
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+
+        <RecenterMap center={center} />
 
         {route?.blockedPath && (
           <Polyline
@@ -78,7 +91,7 @@ export default function RouteMap({ route, hazard, disruptions, showDisruptions =
       </MapContainer>
 
       {lastUpdate && (
-        <div className="absolute bottom-3 left-3 z-[1000] bg-white bg-opacity-90 rounded-full px-3 py-1 text-xs font-medium text-gray-700 shadow">
+        <div className="absolute bottom-3 left-3 z-[1000] bg-white/90 rounded-full px-3 py-1 text-xs font-medium text-gray-700 shadow">
           Last update {lastUpdate} IST
         </div>
       )}

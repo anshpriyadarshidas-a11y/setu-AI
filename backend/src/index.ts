@@ -11,9 +11,13 @@ import riskRouter from './routes/riskRoutes.ts';
 import routeRouter from './routes/routeRoutes.ts';
 import offlineRouter from './routes/offlineRoutes.ts';
 import disruptionRouter from './routes/disruptionRoutes.ts';
+import { monitorRoutesForAlerts } from './services/routeMonitor.ts';
 
 
 dotenv.config();
+
+// Setup background monitoring (every 5 minutes)
+setInterval(monitorRoutesForAlerts, 5 * 60 * 1000);
 
 const app = express();
 app.use(helmet());

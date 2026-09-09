@@ -6,9 +6,24 @@ import L from 'leaflet'
 const MODE_LABELS = { emergency: 'Emergency', freight: 'Freight', accessibility: 'Accessibility' }
 
 const defaultLocations = {
-  emergency: { source: 'Guwahati Medical College', destination: 'Tezpur Civil Hospital' },
-  freight: { source: 'Guwahati ICD Depot', destination: 'Dibrugarh Market Hub' },
-  accessibility: { source: 'Guwahati Railway Station', destination: 'Jorhat Town Centre' },
+  emergency: {
+    source: 'Guwahati Medical College',
+    destination: 'Tezpur Civil Hospital',
+    srcCoord: [26.1445, 91.7362],
+    dstCoord: [26.6200, 92.4500],
+  },
+  freight: {
+    source: 'Guwahati ICD Depot',
+    destination: 'Dibrugarh Market Hub',
+    srcCoord: [26.1445, 91.7362],
+    dstCoord: [26.6200, 92.4500],
+  },
+  accessibility: {
+    source: 'Guwahati Railway Station',
+    destination: 'Jorhat Town Centre',
+    srcCoord: [26.1445, 91.7362],
+    dstCoord: [26.6200, 92.4500],
+  },
 }
 
 const pinIcon = (color) =>
@@ -29,19 +44,44 @@ export default function LocationScreen({ mode }) {
   const defaults = defaultLocations[mode] || defaultLocations.emergency
   const [source, setSource] = useState(defaults.source)
   const [destination, setDestination] = useState(defaults.destination)
-  const [srcCoord] = useState([26.1445, 91.7362])
-  const [dstCoord] = useState([26.6200, 92.4500])
+  const [srcCoord, setSrcCoord] = useState(defaults.srcCoord)
+  const [dstCoord, setDstCoord] = useState(defaults.dstCoord)
+  const [picking, setPicking] = useState(null)
+  
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [smsEnabled, setSmsEnabled] = useState(false)
+
+  function handleMapClick(latlng) {
+    if (picking === 'src') {
+      setSrcCoord([latlng.lat, latlng.lng])
+      setSource(`${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`)
+      setPicking(null)
+    } else if (picking === 'dst') {
+      setDstCoord([latlng.lat, latlng.lng])
+      setDestination(`${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`)
+      setPicking(null)
+    }
+  }
 
   function handleFind(e) {
     e.preventDefault()
-    navigate('/dashboard')
+    navigate('/dashboard', {
+      state: {
+        source,
+        destination,
+        srcCoord,
+        dstCoord,
+        phoneNumber,
+        smsEnabled
+      },
+    })
   }
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 px-4 py-10">
       <div className="w-full max-w-xl">
         <div className="mb-6">
-          <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+          <span className="text-xs font-semibold uppercase tracking-wider text-blue-400 bg-blue-900/40 px-3 py-1 rounded-full">
             {MODE_LABELS[mode]} Mode
           </span>
           <h2 className="text-2xl font-bold text-white mt-3">Where are you going?</h2>
@@ -63,9 +103,9 @@ export default function LocationScreen({ mode }) {
               />
               <button
                 type="button"
-                onClick={() => setSource('Current location')}
-                className="px-3 py-3 border border-zinc-700 rounded-xl text-zinc-400 hover:bg-zinc-800 text-sm cursor-pointer bg-zinc-900"
-                title="Use current location"
+                onClick={() => setPicking(picking === 'src' ? null : 'src')}
+                className={`px-3 py-3 border rounded-xl text-sm cursor-pointer transition-colors ${picking === 'src' ? 'border-blue-500 bg-blue-900/40 text-blue-400' : 'border-zinc-700 rounded-xl text-zinc-400 hover:bg-zinc-800 bg-zinc-900'}`}
+                title="Pick source on map"
               >
                 📍
               </button>
@@ -76,14 +116,47 @@ export default function LocationScreen({ mode }) {
             <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
               Destination
             </label>
-            <input
-              type="text"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="Enter destination"
-              className="w-full border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="Enter destination"
+                className="flex-1 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => setPicking(picking === 'dst' ? null : 'dst')}
+                className={`px-3 py-3 border rounded-xl text-sm cursor-pointer transition-colors ${picking === 'dst' ? 'border-red-500 bg-red-900/40 text-red-400' : 'border-zinc-700 rounded-xl text-zinc-400 hover:bg-zinc-800 bg-zinc-900'}`}
+                title="Pick destination on map"
+              >
+                🏁
+              </button>
+            </div>
           </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mt-4">
+            <h3 className="text-sm font-semibold text-white mb-3">SMS Alert Bridge</h3>
+            <label className="flex items-center gap-2 text-zinc-300 text-sm mb-3 cursor-pointer">
+              <input type="checkbox" checked={smsEnabled} onChange={(e) => setSmsEnabled(e.target.checked)} />
+              Enable SMS alerts for disruption
+            </label>
+            {smsEnabled && (
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number"
+                className="w-full border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white bg-zinc-950"
+              />
+            )}
+          </div>
+
+          {picking && (
+            <p className="text-xs text-blue-400 text-center animate-pulse">
+              Click on the map to set your {picking === 'src' ? 'source' : 'destination'}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -101,10 +174,12 @@ export default function LocationScreen({ mode }) {
             />
             <Marker position={srcCoord} icon={pinIcon('#22c55e')} />
             <Marker position={dstCoord} icon={pinIcon('#ef4444')} />
-            <MapClickHandler onPick={() => {}} />
+            <MapClickHandler onPick={handleMapClick} />
           </MapContainer>
         </div>
-        <p className="text-xs text-gray-400 mt-2 text-center">Map preview — NER region</p>
+        <p className="text-xs text-zinc-500 mt-2 text-center">
+          {picking ? `Tap the map to pick ${picking === 'src' ? 'source 📍' : 'destination 🏁'}` : 'Map preview — NER region'}
+        </p>
       </div>
     </div>
   )

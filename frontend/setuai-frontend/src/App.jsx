@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import TopNav from './components/TopNav'
 import HomeScreen from './screens/HomeScreen'
@@ -12,6 +12,10 @@ import './index.css'
 export default function App() {
   const [mode, setMode] = useState('emergency')
   const [syncStatus, setSyncStatus] = useState(mockData.emergency.syncStatus)
+
+  useEffect(() => {
+    setSyncStatus(mockData[mode].syncStatus)
+  }, [mode])
 
   const user = mockData[mode]?.user || { initials: 'RK' }
 
