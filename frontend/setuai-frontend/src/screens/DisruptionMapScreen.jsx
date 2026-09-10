@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
-import { mockData, SEVERITY_COLORS } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { fetchData } from '../services/api'
+import { SEVERITY_COLORS } from '../data/mockData'
 
 function makeIcon(color) {
   return L.divIcon({
@@ -18,17 +20,13 @@ const LEGEND = [
   { color: SEVERITY_COLORS.moderate, label: 'Moderate' },
 ]
 
-const allDisruptions = [
-  ...mockData.emergency.disruptions,
-  ...mockData.freight.disruptions.filter((d) => !mockData.emergency.disruptions.find((e) => e.label === d.label)),
-  ...mockData.accessibility.disruptions.filter(
-    (d) => !mockData.emergency.disruptions.find((e) => e.label === d.label) &&
-           !mockData.freight.disruptions.find((f) => f.label === d.label)
-  ),
-]
-
 export default function DisruptionMapScreen() {
   const navigate = useNavigate()
+  const [allDisruptions, setAllDisruptions] = useState([])
+
+  useEffect(() => {
+    fetchData('/disruptions').then((data) => data && setAllDisruptions(data))
+  }, [])
 
   return (
     <div className="flex flex-col flex-1">

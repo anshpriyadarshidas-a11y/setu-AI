@@ -85,7 +85,6 @@ export default function DashboardScreen({ mode, syncStatus, setSyncStatus }) {
   )
 
   const modeData = mockData[mode]
-
   const effectiveAlert = disrupted ? modeData.alert : null
   const effectiveHazard = disrupted ? modeData.hazard : null
   const disruptions = disrupted ? modeData.disruptions : []
